@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日历记录</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #495057;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 20px;
+            }
+            
+            body {
+                padding: 10px;
+                align-items: stretch;
+            }
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 18px;
+            background: linear-gradient(135deg, #a8c0ff 0%, #8fa3e6 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(168, 192, 255, 0.2);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+        }
+        
+        h1 {
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .calendar-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f1f3f4;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f1f3f4;
+            position: relative;
+        }
+        
+        .calendar-header h2 {
+            font-size: 1.3rem;
+            color: #343a40;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .calendar-nav button {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #e9ecef;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .calendar-nav button:hover {
+            background: #e9ecef;
+            transform: scale(1.05);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #6c757d;
+            font-size: 0.8rem;
+            padding: 0 4px;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 3px;
+            background: #f8f9fa;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-day:hover {
+            background: #f1f3f4;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            border-color: #e9ecef;
+        }
+        
+        .calendar-day.current-month {
+            background: white;
+            color: #495057;
+        }
+        
+        .calendar-day.other-month {
+            background: #f8f9fa;
+            color: #adb5bd;
+        }
+        
+        .calendar-day.today {
+            background: linear-gradient(135deg, #a8c0ff 0%, #8fa3e6 100%);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(168, 192, 255, 0.3);
+        }
+        
+        .calendar-day.selected {
+            background: #8fa3e6;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(143, 163, 230, 0.3);
+        }
+        
+        .day-number {
+            font-size: 0.9rem;
+            font-weight: 400;
+            margin-bottom: 3px;
+        }
+        
+        .day-markers {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1px;
+            width: 100%;
+        }
+        
+        .marker {
+            font-size: 0.6rem;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+        
+        .marker.normal {
+            background: #6c757d;
+        }
+        
+        .marker.love {
+            background: #e9a2b1;
+        }
+        
+        .notes-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f1f3f4;
+        }
+        
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .notes-header h2 {
+            font-size: 1.3rem;
+            color: #343a40;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .selected-date {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 400;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 1px solid #f1f3f4;
+        }
+        
+        @media (max-width: 480px) {
+            .notes-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .selected-date {
+                align-self: stretch;
+                text-align: center;
+            }
+        }
+        
+        .note-input {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        
+        .type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        
+        .type-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+            font-weight: 400;
+            flex: 1;
+            justify-content: center;
+            max-width: 140px;
+            font-size: 0.85rem;
+        }
+        
+        .type-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border-color: #dee2e6;
+        }
+        
+        .type-option.selected {
+            border-color: #8fa3e6;
+            background: #f0f3ff;
+            color: #8fa3e6;
+        }
+        
+        .type-option.love.selected {
+            border-color: #e9a2b1;
+            background: #fdf2f4;
+            color: #e9a2b1;
+        }
+        
+        .type-icon {
+            font-size: 1rem;
+        }
+        
+        textarea {
+            flex-grow: 1;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            resize: none;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            line-height: 1.5;
+            min-height: 100px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #a8c0ff;
+            box-shadow: 0 0 0 3px rgba(168, 192, 255, 0.1);
+            background: white;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #a8c0ff 0%, #8fa3e6 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(168, 192, 255, 0.2);
+            letter-spacing: 0.5px;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(168, 192, 255, 0.3);
+        }
+        
+        .saved-notes {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 250px;
+            padding-right: 5px;
+        }
+        
+        .saved-notes::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .saved-notes::-webkit-scrollbar-track {
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .saved-notes::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 10px;
+        }
+        
+        .note-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #8fa3e6;
+            transition: all 0.3s;
+            border: 1px solid #f1f3f4;
+            position: relative;
+        }
+        
+        .note-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .note-item.love {
+            border-left-color: #e9a2b1;
+        }
+        
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .note-type {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: #6c757d;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid #f1f3f4;
+        }
+        
+        .note-date {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        
+        .note-content {
+            color: #495057;
+            line-height: 1.5;
+            font-size: 0.9rem;
+            padding-right: 30px;
+        }
+        
+        .note-actions {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .delete-note-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            opacity: 0;
+        }
+        
+        .note-item:hover .delete-note-btn {
+            opacity: 1;
+        }
+        
+        .delete-note-btn:hover {
+            background: #ff5252;
+            transform: scale(1.1);
+        }
+        
+        .empty-notes {
+            text-align: center;
+            color: #6c757d;
+            padding: 25px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px dashed #dee2e6;
+        }
+        
+        .empty-notes i {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: #adb5bd;
+        }
+        
+        /* 统计和筛选区域 - 移到下面 */
+        .stats-filters {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f1f3f4;
+            margin-top: 10px;
+        }
+        
+        .stats-filters h2 {
+            font-size: 1.3rem;
+            color: #343a40;
+            font-weight: 500;
+            margin-bottom: 20px;
+            letter-spacing: 0.3px;
+            text-align: center;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #f1f3f4;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #a8c0ff 0%, #8fa3e6 100%);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .stat-normal {
+            color: #6c757d;
+        }
+        
+        .stat-love {
+            color: #e9a2b1;
+        }
+        
+        .stat-total {
+            color: #8fa3e6;
+        }
+        
+        .filters-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: end;
+        }
+        
+        @media (max-width: 768px) {
+            .filters-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-group label i {
+            color: #8fa3e6;
+        }
+        
+        .select-wrapper {
+            position: relative;
+        }
+        
+        .select-wrapper::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+        
+        .filter-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: #a8c0ff;
+            box-shadow: 0 0 0 3px rgba(168, 192, 255, 0.1);
+            background: white;
+        }
+        
+        .date-range-group {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .date-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+        
+        .date-input {
+            width: 100%;
+            padding: 12px 15px;
+            padding-right: 35px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            color: #495057;
+            transition: all 0.3s;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: #a8c0ff;
+            box-shadow: 0 0 0 3px rgba(168, 192, 255, 0.1);
+            background: white;
+        }
+        
+        .clear-date-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #e9ecef;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            color: #6c757d;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: all 0.3s;
+        }
+        
+        .clear-date-btn:hover {
+            background: #dee2e6;
+            color: #495057;
+        }
+        
+        .date-separator {
+            color: #6c757d;
+            font-weight: 500;
+            text-align: center;
+            padding: 0 5px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-actions {
+                justify-content: stretch;
+            }
+            
+            .filter-actions button {
+                flex: 1;
+            }
+        }
+        
+        .apply-filters-btn {
+            background: linear-gradient(135deg, #a8c0ff 0%, #8fa3e6 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .apply-filters-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(168, 192, 255, 0.3);
+        }
+        
+        .clear-filters-btn {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #e9ecef;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .clear-filters-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            color: #6c757d;
+            font-size: 0.8rem;
+            border-top: 1px solid #f1f3f4;
+        }
+        
+        .heart-pulse {
+            color: #e9a2b1;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 导入导出按钮样式 */
+        .import-export-buttons {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .import-btn, .export-btn {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .import-btn:hover, .export-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+        }
+        
+        .export-btn:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+        
+        .import-btn {
+            background: linear-gradient(135deg, #007bff 0%, #5a9cff 100%);
+            color: white;
+            border: none;
+        }
+        
+        .import-btn:hover {
+            background: linear-gradient(135deg, #0069d9 0%, #4a8bff 100%);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calendar-alt"></i> 日历记录</h1>
+            <div class="subtitle">记录生活中的美好时刻</div>
+        </header>
+        
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h2 id="current-month">2023年10月</h2>
+                <div class="calendar-nav">
+                    <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="import-export-buttons">
+                    <button class="import-btn" id="import-data">
+                        <i class="fas fa-upload"></i> 导入
+                    </button>
+                    <button class="export-btn" id="export-data">
+                        <i class="fas fa-download"></i> 导出
+                    </button>
+                </div>
+            </div>
+            
+            <div class="weekdays">
+                <div>日</div>
+                <div>一</div>
+                <div>二</div>
+                <div>三</div>
+                <div>四</div>
+                <div>五</div>
+                <div>六</div>
+            </div>
+            
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- 日历日期将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <div class="notes-container">
+            <div class="notes-header">
+                <h2>记录美好时刻</h2>
+                <div class="selected-date" id="selected-date">2023年10月15日</div>
+            </div>
+            
+            <div class="note-input">
+                <div class="type-selector">
+                    <div class="type-option selected" data-type="normal">
+                        <i class="fas fa-sticky-note type-icon"></i>
+                        <span>普通记录</span>
+                    </div>
+                    <div class="type-option love" data-type="love">
+                        <i class="fas fa-heart type-icon heart-pulse"></i>
+                        <span>情侣时刻</span>
+                    </div>
+                </div>
+                
+                <textarea id="note-text" placeholder="记录今天的美好时刻、想法或感受..."></textarea>
+                <button class="save-btn" id="save-note"><i class="fas fa-save"></i> 保存记录</button>
+            </div>
+            
+            <div class="saved-notes" id="saved-notes">
+                <!-- 保存的笔记将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 统计和筛选区域 -->
+        <div class="stats-filters">
+            <h2><i class="fas fa-chart-bar"></i> 记录统计与筛选</h2>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value stat-total" id="total-notes">0</div>
+                    <div class="stat-label">总记录数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-normal" id="normal-notes">0</div>
+                    <div class="stat-label">普通记录</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-love" id="love-notes">0</div>
+                    <div class="stat-label">情侣时刻</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-total" id="days-with-notes">0</div>
+                    <div class="stat-label">有记录的天数</div>
+                </div>
+            </div>
+            
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label><i class="fas fa-filter"></i> 记录类型筛选</label>
+                    <div class="select-wrapper">
+                        <select class="filter-select" id="type-filter">
+                            <option value="all">全部记录类型</option>
+                            <option value="normal">普通记录</option>
+                            <option value="love">情侣时刻</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-day"></i> 日期范围筛选</label>
+                    <div class="date-range-group">
+                        <div class="date-input-wrapper">
+                            <input type="date" class="date-input" id="start-date" placeholder="开始日期">
+                            <button type="button" class="clear-date-btn" data-target="start-date" title="清空开始日期">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="date-separator">至</div>
+                        <div class="date-input-wrapper">
+                            <input type="date" class="date-input" id="end-date" placeholder="结束日期">
+                            <button type="button" class="clear-date-btn" data-target="end-date" title="清空结束日期">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button class="apply-filters-btn" id="apply-date-range">
+                        <i class="fas fa-check"></i> 应用筛选
+                    </button>
+                    <button class="clear-filters-btn" id="clear-filters">
+                        <i class="fas fa-times"></i> 清除筛选
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025 日历记录 <i class="fas fa-heart" style="color: #e9a2b1;"></i></p>
+            <p style="font-size: 0.7rem; margin-top: 5px;">数据自动保存到 localStorage，可使用导入/导出功能备份到本地文件</p>
+        </footer>
+    </div>
+
+    <script>
+        // 初始化变量
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let selectedNoteType = 'normal';
+        let notes = {};
+        
+        // 筛选状态
+        let currentFilter = {
+            type: 'all',
+            dateRange: null
+        };
+
+        // DOM元素
+        const calendarGrid = document.getElementById('calendar-grid');
+        const currentMonthElement = document.getElementById('current-month');
+        const selectedDateElement = document.getElementById('selected-date');
+        const noteText = document.getElementById('note-text');
+        const saveNoteButton = document.getElementById('save-note');
+        const savedNotesContainer = document.getElementById('saved-notes');
+        const prevMonthButton = document.getElementById('prev-month');
+        const nextMonthButton = document.getElementById('next-month');
+        const typeOptions = document.querySelectorAll('.type-option');
+        const importButton = document.getElementById('import-data');
+        const exportButton = document.getElementById('export-data');
+        
+        // 统计元素
+        const totalNotesElement = document.getElementById('total-notes');
+        const normalNotesElement = document.getElementById('normal-notes');
+        const loveNotesElement = document.getElementById('love-notes');
+        const daysWithNotesElement = document.getElementById('days-with-notes');
+        
+        // 筛选元素
+        const typeFilterSelect = document.getElementById('type-filter');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const applyDateRangeButton = document.getElementById('apply-date-range');
+        const clearFiltersButton = document.getElementById('clear-filters');
+        const clearDateButtons = document.querySelectorAll('.clear-date-btn');
+
+        // 初始化应用
+        function initApp() {
+            loadNotes();
+            renderCalendar();
+            updateSelectedDateDisplay();
+            renderSavedNotes();
+            updateStatistics();
+            setupFilterListeners();
+            
+            // 设置默认日期范围为空
+            startDateInput.value = '';
+            endDateInput.value = '';
+            
+            // 事件监听
+            prevMonthButton.addEventListener('click', goToPreviousMonth);
+            nextMonthButton.addEventListener('click', goToNextMonth);
+            saveNoteButton.addEventListener('click', saveNote);
+            importButton.addEventListener('click', importDataFromFile);
+            exportButton.addEventListener('click', exportDataToFile);
+            
+            // 类型选择事件
+            typeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    typeOptions.forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.classList.contains('love')) {
+                            opt.classList.remove('love');
+                        }
+                    });
+                    option.classList.add('selected');
+                    if (option.getAttribute('data-type') === 'love') {
+                        option.classList.add('love');
+                    }
+                    selectedNoteType = option.getAttribute('data-type');
+                });
+            });
+            
+            // 显示加载完成消息
+            console.log('日历记录应用已初始化');
+        }
+
+        // 加载笔记数据
+        function loadNotes() {
+            try {
+                // 从 localStorage 加载
+                const localData = localStorage.getItem('calendarNotes');
+                if (localData) {
+                    notes = JSON.parse(localData);
+                    console.log('从 localStorage 加载数据成功');
+                } else {
+                    notes = {};
+                    console.log('没有找到保存的数据，使用空数据');
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                notes = {};
+            }
+        }
+
+        // 保存数据到 localStorage
+        function saveNotes() {
+            try {
+                localStorage.setItem('calendarNotes', JSON.stringify(notes));
+                console.log('数据保存到 localStorage 成功');
+                return true;
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                alert('保存数据时出错: ' + error.message);
+                return false;
+            }
+        }
+
+        // 从文件导入数据
+        function importDataFromFile() {
+            try {
+                // 创建文件输入元素
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.style.display = 'none';
+                
+                input.onchange = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    if (!file.name.endsWith('.json')) {
+                        alert('请选择 JSON 格式的文件');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            
+                            // 验证数据格式
+                            if (typeof importedData !== 'object' || importedData === null) {
+                                throw new Error('无效的 JSON 数据格式');
+                            }
+                            
+                            // 确认是否覆盖现有数据
+                            if (Object.keys(notes).length > 0) {
+                                const confirmOverwrite = confirm(
+                                    `导入数据将完全替换现有的 ${Object.keys(notes).length} 条记录。\n是否继续？`
+                                );
+                                if (!confirmOverwrite) return;
+                            }
+                            
+                            // 更新数据
+                            notes = importedData;
+                            
+                            // 保存数据到 localStorage
+                            if (saveNotes()) {
+                                // 重新渲染界面
+                                renderCalendar();
+                                renderSavedNotes();
+                                updateStatistics();
+                                
+                                alert(`数据导入成功！共导入 ${Object.keys(notes).length} 天的记录。`);
+                            }
+                            
+                        } catch (error) {
+                            alert('导入失败: ' + error.message);
+                            console.error('导入数据解析失败:', error);
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                };
+                
+                document.body.appendChild(input);
+                input.click();
+                document.body.removeChild(input);
+                
+            } catch (error) {
+                console.error('导入数据失败:', error);
+                alert('导入数据失败: ' + error.message);
+            }
+        }
+
+        // 导出数据到文件
+        function exportDataToFile() {
+            try {
+                if (Object.keys(notes).length === 0) {
+                    alert('没有数据可以导出');
+                    return;
+                }
+                
+                const fileName = `calendar-notes-${new Date().toISOString().slice(0, 10)}.json`;
+                const dataStr = JSON.stringify(notes, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                // 创建下载链接
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                // 释放URL对象
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+                alert(`数据已导出为 ${fileName} 文件，共 ${Object.keys(notes).length} 天的记录。`);
+                
+            } catch (error) {
+                console.error('导出数据失败:', error);
+                alert('导出数据失败: ' + error.message);
+            }
+        }
+
+        // 设置筛选监听器
+        function setupFilterListeners() {
+            // 记录类型筛选
+            typeFilterSelect.addEventListener('change', () => {
+                currentFilter.type = typeFilterSelect.value;
+                renderSavedNotes();
+                updateStatistics();
+            });
+            
+            // 自定义日期范围应用
+            applyDateRangeButton.addEventListener('click', () => {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                
+                // 允许清空日期范围，查询所有记录
+                if (!startDate && !endDate) {
+                    currentFilter.dateRange = null;
+                } else if (!startDate || !endDate) {
+                    alert('请选择完整的日期范围，或清空两个日期以查询所有记录');
+                    return;
+                } else if (new Date(startDate) > new Date(endDate)) {
+                    alert('开始日期不能晚于结束日期');
+                    return;
+                } else {
+                    currentFilter.dateRange = {
+                        start: new Date(startDate),
+                        end: new Date(endDate)
+                    };
+                }
+                
+                renderSavedNotes();
+                updateStatistics();
+            });
+            
+            // 清空单个日期输入
+            clearDateButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    document.getElementById(targetId).value = '';
+                    
+                    // 如果两个日期都清空了，自动应用筛选（查询所有）
+                    if (!startDateInput.value && !endDateInput.value) {
+                        currentFilter.dateRange = null;
+                        renderSavedNotes();
+                        updateStatistics();
+                    }
+                });
+            });
+            
+            // 清除所有筛选
+            clearFiltersButton.addEventListener('click', () => {
+                currentFilter = {
+                    type: 'all',
+                    dateRange: null
+                };
+                
+                // 重置筛选控件
+                typeFilterSelect.value = 'all';
+                startDateInput.value = '';
+                endDateInput.value = '';
+                
+                renderSavedNotes();
+                updateStatistics();
+            });
+        }
+
+        // 删除记录
+        function deleteNote(dateKey, noteId) {
+            if (!confirm('确定要删除这条记录吗？此操作不可撤销。')) {
+                return;
+            }
+            
+            if (notes[dateKey]) {
+                const noteIndex = notes[dateKey].findIndex(note => note.id === noteId);
+                if (noteIndex !== -1) {
+                    notes[dateKey].splice(noteIndex, 1);
+                    
+                    // 如果该日期没有记录了，删除该日期的键
+                    if (notes[dateKey].length === 0) {
+                        delete notes[dateKey];
+                    }
+                    
+                    // 保存数据
+                    saveNotes();
+                    
+                    // 重新渲染
+                    renderCalendar();
+                    renderSavedNotes();
+                    updateStatistics();
+                }
+            }
+        }
+
+        // 更新统计信息
+        function updateStatistics() {
+            let totalNotes = 0;
+            let normalNotes = 0;
+            let loveNotes = 0;
+            const daysWithNotes = new Set();
+            
+            Object.keys(notes).forEach(dateKey => {
+                const date = parseDateKey(dateKey);
+                
+                // 检查日期是否在筛选范围内
+                if (currentFilter.dateRange) {
+                    if (date < currentFilter.dateRange.start || date > currentFilter.dateRange.end) {
+                        return;
+                    }
+                }
+                
+                const dateNotes = notes[dateKey];
+                
+                dateNotes.forEach(note => {
+                    // 检查类型筛选
+                    if (currentFilter.type !== 'all' && note.type !== currentFilter.type) {
+                        return;
+                    }
+                    
+                    totalNotes++;
+                    if (note.type === 'normal') {
+                        normalNotes++;
+                    } else if (note.type === 'love') {
+                        loveNotes++;
+                    }
+                    daysWithNotes.add(dateKey);
+                });
+            });
+            
+            totalNotesElement.textContent = totalNotes;
+            normalNotesElement.textContent = normalNotes;
+            loveNotesElement.textContent = loveNotes;
+            daysWithNotesElement.textContent = daysWithNotes.size;
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // 更新月份显示
+            currentMonthElement.textContent = `${year}年${month + 1}月`;
+            
+            // 获取当月第一天和最后一天
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            // 获取第一天是星期几 (0 = 星期日, 6 = 星期六)
+            const firstDayOfWeek = firstDay.getDay();
+            
+            // 获取上个月的最后几天
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            
+            // 添加上个月的日期
+            for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                const day = prevMonthLastDay - i;
+                const date = new Date(year, month - 1, day);
+                addDayToCalendar(date, 'other-month');
+            }
+            
+            // 添加当月的日期
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(year, month, day);
+                addDayToCalendar(date, 'current-month');
+            }
+            
+            // 添加下个月的日期
+            const totalCells = 42; // 6行 x 7列
+            const daysSoFar = calendarGrid.children.length;
+            for (let day = 1; day <= totalCells - daysSoFar; day++) {
+                const date = new Date(year, month + 1, day);
+                addDayToCalendar(date, 'other-month');
+            }
+        }
+
+        // 添加日期到日历
+        function addDayToCalendar(date, className) {
+            const dayElement = document.createElement('div');
+            dayElement.className = `calendar-day ${className}`;
+            
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'day-number';
+            dayNumber.textContent = date.getDate();
+            dayElement.appendChild(dayNumber);
+            
+            // 检查是否是今天
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                dayElement.classList.add('today');
+            }
+            
+            // 检查是否是选中的日期
+            if (date.toDateString() === selectedDate.toDateString()) {
+                dayElement.classList.add('selected');
+            }
+            
+            // 检查是否有笔记
+            const dateKey = formatDateKey(date);
+            if (notes[dateKey] && notes[dateKey].length > 0) {
+                const dayMarkers = document.createElement('div');
+                dayMarkers.className = 'day-markers';
+                
+                // 统计不同类型的笔记数量
+                const typeCounts = {
+                    normal: 0,
+                    love: 0
+                };
+                
+                notes[dateKey].forEach(note => {
+                    typeCounts[note.type]++;
+                });
+                
+                // 添加标记
+                Object.keys(typeCounts).forEach(type => {
+                    if (typeCounts[type] > 0) {
+                        const marker = document.createElement('div');
+                        marker.className = `marker ${type}`;
+                        
+                        // 设置图标
+                        switch(type) {
+                            case 'normal':
+                                marker.innerHTML = '<i class="fas fa-sticky-note"></i>';
+                                break;
+                            case 'love':
+                                marker.innerHTML = '<i class="fas fa-heart"></i>';
+                                break;
+                        }
+                        
+                        dayMarkers.appendChild(marker);
+                    }
+                });
+                
+                dayElement.appendChild(dayMarkers);
+            }
+            
+            // 添加点击事件
+            dayElement.addEventListener('click', () => selectDate(date));
+            
+            calendarGrid.appendChild(dayElement);
+        }
+
+        // 选择日期
+        function selectDate(date) {
+            selectedDate = date;
+            updateSelectedDateDisplay();
+            renderCalendar(); // 重新渲染以更新选中状态
+            renderSavedNotes();
+            noteText.value = ''; // 清空输入框
+        }
+
+        // 更新选中的日期显示
+        function updateSelectedDateDisplay() {
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            selectedDateElement.textContent = `${year}年${month}月${day}日`;
+        }
+
+        // 保存笔记
+        function saveNote() {
+            const content = noteText.value.trim();
+            if (!content) {
+                alert('请输入记录内容');
+                return;
+            }
+            
+            const dateKey = formatDateKey(selectedDate);
+            
+            if (!notes[dateKey]) {
+                notes[dateKey] = [];
+            }
+            
+            const note = {
+                id: Date.now(),
+                type: selectedNoteType,
+                content: content,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            notes[dateKey].push(note);
+            
+            // 保存数据到 localStorage
+            if (saveNotes()) {
+                noteText.value = '';
+                renderCalendar();
+                renderSavedNotes();
+                updateStatistics();
+            }
+        }
+
+        // 渲染保存的笔记
+        function renderSavedNotes() {
+            const dateKey = formatDateKey(selectedDate);
+            let dateNotes = notes[dateKey] || [];
+            
+            // 应用筛选
+            if (currentFilter.type !== 'all') {
+                dateNotes = dateNotes.filter(note => note.type === currentFilter.type);
+            }
+            
+            savedNotesContainer.innerHTML = '';
+            
+            if (dateNotes.length === 0) {
+                savedNotesContainer.innerHTML = `
+                    <div class="empty-notes">
+                        <i class="far fa-calendar-plus"></i>
+                        <p>这一天还没有记录，添加您的第一条记录吧！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            dateNotes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = `note-item ${note.type === 'love' ? 'love' : ''}`;
+                
+                // 类型图标和文本
+                let typeIcon = '';
+                let typeText = '';
+                
+                switch(note.type) {
+                    case 'normal':
+                        typeIcon = 'fa-sticky-note';
+                        typeText = '普通记录';
+                        break;
+                    case 'love':
+                        typeIcon = 'fa-heart';
+                        typeText = '情侣时刻';
+                        break;
+                }
+                
+                noteElement.innerHTML = `
+                    <div class="note-header">
+                        <div class="note-type">
+                            <i class="fas ${typeIcon}"></i>
+                            <span>${typeText}</span>
+                        </div>
+                        <div class="note-date">${note.timestamp}</div>
+                    </div>
+                    <div class="note-content">${note.content}</div>
+                    <div class="note-actions">
+                        <button class="delete-note-btn" data-id="${note.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // 添加删除事件监听
+                const deleteBtn = noteElement.querySelector('.delete-note-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteNote(dateKey, note.id);
+                });
+                
+                savedNotesContainer.appendChild(noteElement);
+            });
+        }
+
+        // 格式化日期键
+        function formatDateKey(date) {
+            return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        }
+
+        // 解析日期键
+        function parseDateKey(dateKey) {
+            const [year, month, day] = dateKey.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        // 格式化日期为输入框格式
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 切换到上个月
+        function goToPreviousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        // 切换到下个月
+        function goToNextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
